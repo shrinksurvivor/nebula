@@ -49,6 +49,7 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const hasApiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== '');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -120,7 +121,10 @@ export default function App() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
-          ...messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
+          ...messages.map(m => ({ 
+            role: m.role === 'assistant' ? 'model' : 'user', 
+            parts: [{ text: m.content || " " }] 
+          })),
           { role: 'user', parts }
         ],
         config: {
@@ -350,6 +354,15 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {!hasApiKey && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 text-center relative z-20 backdrop-blur-sm">
+            <p className="text-xs font-medium text-amber-500 flex items-center justify-center gap-2">
+              <Zap size={14} className="animate-pulse" />
+              API Key Error: Please set GEMINI_API_KEY in your environment/secrets to enable AI replies.
+            </p>
+          </div>
+        )}
 
         {/* Message Feed */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth relative z-10 custom-scrollbar">
