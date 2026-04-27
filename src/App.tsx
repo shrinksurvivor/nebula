@@ -48,8 +48,18 @@ export default function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const hasApiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== '');
+  const hasApiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== '' && process.env.GEMINI_API_KEY !== 'undefined');
+  const ai = useRef<GoogleGenAI | null>(null);
+
+  useEffect(() => {
+    if (hasApiKey) {
+      try {
+        ai.current = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      } catch (err) {
+        console.error("Failed to initialize GoogleGenAI:", err);
+      }
+    }
+  }, [hasApiKey]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -107,6 +117,12 @@ export default function App() {
     const currentAttachments = [...attachments];
     setAttachments([]);
 
+    if (!ai.current) {
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: 'Ошибка помощника: API ключ не настроен.' }]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const parts: any[] = [{ text }];
       currentAttachments.forEach(att => {
@@ -118,7 +134,7 @@ export default function App() {
         });
       });
 
-      const response = await ai.models.generateContent({
+      const response = await ai.current.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
           ...messages.map(m => ({ 
@@ -159,6 +175,11 @@ export default function App() {
   };
 
   const toggleLiveMode = async () => {
+    if (!ai.current) {
+      alert("API ключ не настроен.");
+      return;
+    }
+
     if (isLiveMode) {
       audioManager.current.stopCapture();
       setIsLiveMode(false);
@@ -167,7 +188,7 @@ export default function App() {
     } else {
       setIsLiveMode(true);
       try {
-        const sessionPromise = ai.live.connect({
+        const sessionPromise = ai.current.live.connect({
           model: "gemini-3.1-flash-live-preview",
           callbacks: {
             onopen: () => {
