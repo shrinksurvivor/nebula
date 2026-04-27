@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Global Chat Rules
+    match /global_chat/{messageId} {
+      function isValidMessage(data) {
+        return data.keys().hasAll(['userId', 'userName', 'text', 'createdAt'])
+          && data.keys().size() <= 6
+          && data.userId == request.auth.uid
+          && data.userName is string && data.userName.size() <= 100
+          && data.text is string && data.text.size() <= 1000
+          && data.createdAt == request.time
+          && (data.get('userPhoto', '') is string);
+      }
+
+      // Allow reading the last 100 messages for signed in users
+      allow list: if isSignedIn();
+      allow get: if isSignedIn();
+      
+      // Allow creating a message if valid
+      allow create: if isSignedIn() && isValidId(messageId) && isValidMessage(request.resource.data);
+      
+      // Messages are immutable once sent
+      allow update, delete: if false;
+    }
+  }
+}

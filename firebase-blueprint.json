@@ -1,0 +1,23 @@
+{
+  "entities": {
+    "LiveChatMessage": {
+      "title": "Live Chat Message",
+      "description": "A message sent in the public global live chat.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who sent the message." },
+        "userName": { "type": "string", "description": "Display name of the user." },
+        "userPhoto": { "type": "string", "description": "URL to the user's profile photo." },
+        "text": { "type": "string", "description": "The content of the message." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." }
+      },
+      "required": ["userId", "userName", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/global_chat/{messageId}": {
+      "schema": "LiveChatMessage",
+      "description": "Public global chat messages."
+    }
+  }
+}

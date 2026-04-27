@@ -1,0 +1,6 @@
+{
+  "name": "Nebula",
+  "description": "Nebula: Next-gen AI assistant with real-time Live Voice interaction, advanced space-themed animations, and AI-powered discovery.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}
